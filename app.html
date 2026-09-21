@@ -60,15 +60,14 @@ function moonSVG(p, size){
   var r=90, cx=100, cy=100;
   var t=Math.cos(2*Math.PI*p);
   var rx=Math.abs(t)*r;
-  var path, lit;
+  var lit;
   if (p < 0.5){
-    lit = 'M'+cx+','+(cy-r)+' A'+r+','+r+' 0 0 1 '+cx+','+(cy+r)+' A'+rx+','+r+' 0 0 '+(t>=0?'1':'0')+' '+cx+','+(cy-r)+' Z';
+    lit = 'M'+cx+','+(cy-r)+' A'+r+','+r+' 0 0 1 '+cx+','+(cy+r)+' A'+rx+','+r+' 0 0 '+(t>=0?'0':'1')+' '+cx+','+(cy-r)+' Z';
   } else {
-    lit = 'M'+cx+','+(cy-r)+' A'+r+','+r+' 0 0 0 '+cx+','+(cy+r)+' A'+rx+','+r+' 0 0 '+(t>=0?'0':'1')+' '+cx+','+(cy-r)+' Z';
+    lit = 'M'+cx+','+(cy-r)+' A'+r+','+r+' 0 0 0 '+cx+','+(cy+r)+' A'+rx+','+r+' 0 0 '+(t>=0?'1':'0')+' '+cx+','+(cy-r)+' Z';
   }
   return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 200 200">'+
     '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#1b2036"/>'+
-    '<path d="'+path+'" fill="none"/>'+
     '<path d="'+lit+'" fill="#f0ead6"/>'+
     '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="#2c3352" stroke-width="2"/></svg>';
 }
