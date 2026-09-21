@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luna</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:#0a0c14; color:#eef1fa; min-height:100vh; padding:18px 12px 50px; }
+  .wrap { max-width:560px; margin:0 auto; }
+  header { text-align:center; margin-bottom:10px; }
+  header h1 { font-size:26px; }
+  header .tag { color:#8890b0; font-size:12px; }
+  a { color:#a5b4fc; text-decoration:none; }
+  .moonbox { display:flex; justify-content:center; margin:6px 0 2px; }
+  #phaseName { text-align:center; font-size:22px; font-weight:800; }
+  .stats { display:flex; justify-content:center; gap:26px; margin:10px 0 14px; font-variant-numeric:tabular-nums; }
+  .stats .c { text-align:center; }
+  .stats .v { font-size:19px; font-weight:800; }
+  .stats .k { font-size:10px; color:#8890b0; text-transform:uppercase; letter-spacing:1px; }
+  .picker { display:flex; justify-content:center; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  input[type=date] { background:#161a2c; color:#eef1fa; border:1px solid #2c3352; border-radius:10px; padding:8px 12px; font-size:14px; color-scheme:dark; }
+  .btn { background:#a5b4fc; color:#0a0c14; border:none; border-radius:999px; padding:9px 18px; font-size:13px; font-weight:800; cursor:pointer; }
+  .sect { font-size:11px; font-weight:700; color:#8890b0; text-transform:uppercase; letter-spacing:1px; text-align:center; margin:16px 0 8px; }
+  .miles { max-width:340px; margin:0 auto; }
+  .mile { display:flex; justify-content:space-between; background:#161a2c; border:1px solid #2c3352; border-radius:10px; padding:9px 14px; margin-bottom:6px; font-size:13.5px; }
+  .mile b { color:#a5b4fc; }
+  .strip { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; max-width:420px; margin:0 auto; }
+  .cell { background:#161a2c; border:1px solid #2c3352; border-radius:10px; padding:6px 2px 4px; text-align:center; cursor:pointer; }
+  .cell.sel { border-color:#a5b4fc; }
+  .cell svg { width:26px; height:26px; }
+  .cell .d { font-size:9.5px; color:#8890b0; margin-top:2px; }
+  .note { text-align:center; color:#4d5474; font-size:11.5px; margin-top:16px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>&#127769; Luna</h1><div class="tag">the moon, on any date. phases, milestones, a fortnight strip.</div></header>
+  <div class="moonbox" id="moonbox"></div>
+  <div id="phaseName"></div>
+  <div class="stats">
+    <div class="c"><div class="v" id="illum">-</div><div class="k">lit</div></div>
+    <div class="c"><div class="v" id="age">-</div><div class="k">age</div></div>
+  </div>
+  <div class="picker">
+    <input type="date" id="date">
+    <button class="btn" id="today">Tonight</button>
+  </div>
+  <div class="sect">Next milestones</div>
+  <div class="miles" id="miles"></div>
+  <div class="sect">Next 14 nights</div>
+  <div class="strip" id="strip"></div>
+  <div class="note">Pick any date, past or future.<br><a href="index.html">about</a></div>
+</div>
+<script src="engine.js?v=1"></script>
+<script>
+var SEL = Date.now();
+function $(id){return document.getElementById(id);}
+function moonSVG(p, size){
+  var r=90, cx=100, cy=100;
+  var t=Math.cos(2*Math.PI*p);
+  var rx=Math.abs(t)*r;
+  var path, lit;
+  if (p < 0.5){
+    lit = 'M'+cx+','+(cy-r)+' A'+r+','+r+' 0 0 1 '+cx+','+(cy+r)+' A'+rx+','+r+' 0 0 '+(t>=0?'1':'0')+' '+cx+','+(cy-r)+' Z';
+  } else {
+    lit = 'M'+cx+','+(cy-r)+' A'+r+','+r+' 0 0 0 '+cx+','+(cy+r)+' A'+rx+','+r+' 0 0 '+(t>=0?'0':'1')+' '+cx+','+(cy-r)+' Z';
+  }
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 200 200">'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#1b2036"/>'+
+    '<path d="'+path+'" fill="none"/>'+
+    '<path d="'+lit+'" fill="#f0ead6"/>'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="#2c3352" stroke-width="2"/></svg>';
+}
+function fmtDate(ms){
+  var d=new Date(ms);
+  var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return M[d.getMonth()]+' '+d.getDate();
+}
+function render(){
+  var p=phase(SEL);
+  $('moonbox').innerHTML=moonSVG(p,220);
+  $('phaseName').textContent=phaseName(p);
+  $('illum').textContent=Math.round(illumination(p)*100)+'%';
+  var age=ageDays(p);
+  $('age').textContent=age.toFixed(1)+'d';
+  var ms=nextMilestones(SEL), s='';
+  ms.forEach(function(m){ s+='<div class="mile"><span>'+m.name+'</span><b>'+fmtDate(m.at)+'</b></div>'; });
+  $('miles').innerHTML=s;
+  var strip='';
+  for (var i=0;i<14;i++){
+    var day=SEL+i*86400000;
+    var dp=phase(day);
+    strip+='<div class="cell'+(i===0?' sel':'')+'" data-ms="'+day+'">'+moonSVG(dp,26)+'<div class="d">'+fmtDate(day)+'</div></div>';
+  }
+  $('strip').innerHTML=strip;
+  document.querySelectorAll('.cell').forEach(function(c){
+    c.onclick=function(){ SEL=+c.dataset.ms; syncInput(); render(); };
+  });
+  var d=new Date(SEL);
+  $('date').value=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+}
+function syncInput(){}
+$('date').onchange=function(){
+  var v=this.value; if(!v) return;
+  var parts=v.split('-');
+  SEL=new Date(+parts[0],+parts[1]-1,+parts[2],20,0,0).getTime();
+  render();
+};
+$('today').onclick=function(){ SEL=Date.now(); render(); };
+render();
+</script>
+</body>
+</html>
